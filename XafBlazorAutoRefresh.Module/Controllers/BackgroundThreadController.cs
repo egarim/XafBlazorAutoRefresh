@@ -43,7 +43,7 @@ namespace XafBlazorAutoRefresh.Module.Controllers
             this.View.ObjectSpace.CommitChanges();
             // Execute your business logic (https://docs.devexpress.com/eXpressAppFramework/112737/).
         }
-        XPObjectSpace XpObjectSpace;
+      
         Random random = new Random();
         BackgroundWorker backgroundWorker;
         protected override void OnActivated()
@@ -51,7 +51,7 @@ namespace XafBlazorAutoRefresh.Module.Controllers
             base.OnActivated();
             //SELECT GETDATE();
             this.View.QueryCanClose += View_QueryCanClose;
-            XpObjectSpace = (this.ObjectSpace as XPObjectSpace);
+          
             EmulateLongProcess();
             RefreshTimerWithBackgroundThread();
             // Perform various tasks depending on the target View.
