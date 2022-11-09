@@ -22,6 +22,7 @@ namespace XafBlazorAutoRefresh.Module.Controllers
     // For more typical usage scenarios, be sure to check out https://documentation.devexpress.com/eXpressAppFramework/clsDevExpressExpressAppViewControllertopic.aspx.
     public partial class BackgroundThreadController : ViewController
     {
+        SimpleAction DeleteAll;
         // Use CodeRush to create Controllers and Actions with a few keystrokes.
         // https://docs.devexpress.com/CodeRushForRoslyn/403133/
         public BackgroundThreadController()
@@ -30,7 +31,17 @@ namespace XafBlazorAutoRefresh.Module.Controllers
             this.TargetObjectType = typeof(Test);
             this.TargetViewType = ViewType.ListView;
 
+            DeleteAll = new SimpleAction(this, "Delete all", "View");
+            DeleteAll.Execute += DeleteAll_Execute;
+            
+
             // Target required Views (via the TargetXXX properties) and create their Actions.
+        }
+        private void DeleteAll_Execute(object sender, SimpleActionExecuteEventArgs e)
+        {
+            this.View.ObjectSpace.Delete(this.View.ObjectSpace.CreateCollection(this.TargetObjectType));
+            this.View.ObjectSpace.CommitChanges();
+            // Execute your business logic (https://docs.devexpress.com/eXpressAppFramework/112737/).
         }
         XPObjectSpace XpObjectSpace;
         Random random = new Random();
@@ -41,7 +52,8 @@ namespace XafBlazorAutoRefresh.Module.Controllers
             //SELECT GETDATE();
             this.View.QueryCanClose += View_QueryCanClose;
             XpObjectSpace = (this.ObjectSpace as XPObjectSpace);
-            CreateLastRefreshRecord();
+            EmulateLongProcess();
+            RefreshTimerWithBackgroundThread();
             // Perform various tasks depending on the target View.
         }
 
@@ -58,9 +70,45 @@ namespace XafBlazorAutoRefresh.Module.Controllers
             }
         }
 
-        void CreateLastRefreshRecord()
+        void RefreshTimerWithBackgroundThread()
         {
+          
 
+         
+
+            backgroundWorker = new BackgroundWorker();
+            backgroundWorker.WorkerSupportsCancellation = true;
+            backgroundWorker.DoWork += BackgroundWorker_DoWork;
+            backgroundWorker.RunWorkerCompleted += BackgroundWorker_RunWorkerCompleted;
+            void BackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
+            {
+                for (int i = 0; i < 100; i++)
+                {
+                    if (backgroundWorker.CancellationPending)
+                    {
+                        e.Cancel = true;
+                        return;
+                    }
+
+
+                    System.Threading.Thread.Sleep(100);
+                }
+
+            }
+            void BackgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+            {
+                if (!e.Cancelled)
+                {
+                    EmulateLongProcess();
+                }
+
+            }
+            backgroundWorker.RunWorkerAsync();
+         
+        }
+
+        private void EmulateLongProcess()
+        {
             var Date = DateTime.Now.ToString("G");
 
             //var Date= XpObjectSpace.Session.ExecuteScalar("SELECT GETDATE()").ToString();
@@ -69,39 +117,8 @@ namespace XafBlazorAutoRefresh.Module.Controllers
             System.Threading.Thread.Sleep(random.Next(5000));
             this.View.ObjectSpace.CommitChanges();
             this.View.Refresh();
-
-            backgroundWorker = new BackgroundWorker();
-            backgroundWorker.WorkerSupportsCancellation = true;
-            backgroundWorker.DoWork += BackgroundWorker_DoWork;
-            backgroundWorker.RunWorkerCompleted += BackgroundWorker_RunWorkerCompleted;
-            void BackgroundWorker_DoWork(object sender, DoWorkEventArgs e)
-            {
-                for (int i = 0; i < 300; i++)
-                {
-                    if (backgroundWorker.CancellationPending)
-                    {
-                        e.Cancel = true;
-                        return;
-                    }
-                       
-
-                    System.Threading.Thread.Sleep(100);
-                }
-               
-            }
-            void BackgroundWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-            {
-                if(!e.Cancelled)
-                {
-                    CreateLastRefreshRecord();
-                }
-               
-            }
-            backgroundWorker.RunWorkerAsync();
-            //SELECT GETDATE();
+            RefreshTimerWithBackgroundThread();
         }
-
-
 
         protected override void OnViewControlsCreated()
         {
