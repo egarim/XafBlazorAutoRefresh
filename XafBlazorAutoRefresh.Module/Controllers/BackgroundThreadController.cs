@@ -111,7 +111,7 @@ namespace XafBlazorAutoRefresh.Module.Controllers
         {
             var Date = DateTime.Now.ToString("G");
 
-            //var Date= XpObjectSpace.Session.ExecuteScalar("SELECT GETDATE()").ToString();
+            
             var CurrentObject = this.View.ObjectSpace.CreateObject<Test>();
             CurrentObject.LastRefresh = Date;
             System.Threading.Thread.Sleep(random.Next(5000));
